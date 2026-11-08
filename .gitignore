@@ -1,0 +1,21 @@
+
+# Raw source data - do not upload
+data/raw/*.csv
+
+# Processed data files
+data/processed/*
+
+# Visual Studio temporary files
+.vs/
+bin/
+obj/
+*.user
+*.suo
+
+# SSIS build files
+[Bb]in/
+[Oo]bj/
+
+# Environment and secret files
+.env
+*.env
