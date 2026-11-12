@@ -1,0 +1,12 @@
+﻿<?xml version="1.0"?>
+<DTS:ConnectionManager xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:ObjectName="MATOMELA"
+  DTS:DTSID="{4B4978EC-D912-40A5-BBF2-F581D479AC74}"
+  DTS:CreationName="OLEDB">
+  <DTS:ObjectData>
+    <DTS:ConnectionManager
+      DTS:ConnectRetryCount="1"
+      DTS:ConnectRetryInterval="5"
+      DTS:ConnectionString="Data Source=MATOMELA;Initial Catalog=olist_dwh;Provider=SQLOLEDB.1;Integrated Security=SSPI;Auto Translate=False;Application Name=SSIS-Olist_capstone_project-{4B4978EC-D912-40A5-BBF2-F581D479AC74}MATOMELA;" />
+  </DTS:ObjectData>
+</DTS:ConnectionManager>
