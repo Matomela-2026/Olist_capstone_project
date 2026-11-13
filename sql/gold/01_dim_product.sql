@@ -57,7 +57,14 @@ BEGIN
     SELECT
         p.product_id,
         p.product_category_name,
-        t.product_category_name_english,
+        CASE
+    WHEN p.product_category_name = 'pc_gamer'
+        THEN 'gaming_pc'
+    WHEN p.product_category_name =
+        'portateis_cozinha_e_preparadores_de_alimentos'
+        THEN 'portable_kitchen_and_food_preparers'
+    ELSE t.product_category_name_english
+END,
         p.product_name_length,
         p.product_description_length,
         p.product_photos_qty,
