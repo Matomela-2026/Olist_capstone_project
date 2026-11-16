@@ -61,3 +61,49 @@ The geolocation transformation is also included in the SSIS package, following t
 ## Layer Outcome
 
 The Silver layer provides cleaned geolocation data and validation checks for customers and orders. It supports the downstream Gold dimensions and fact tables while helping identify data-quality issues early in the warehouse pipeline.
+
+## Order Timestamp Chronology Validation
+
+### Objective
+Validate the chronological consistency of order timestamps between the Bronze and Silver layers while preserving the original source values.
+
+### Validation rules
+
+Two chronology rules were evaluated:
+
+1. `order_delivered_carrier_date` should not precede `order_purchase_timestamp`.
+2. `order_delivered_customer_date` should not precede `order_delivered_carrier_date`.
+
+### Missing timestamp handling
+
+The Bronze order dataset contains empty strings in optional delivery timestamp fields.
+
+During validation, empty strings were explicitly converted to SQL `NULL` using `NULLIF` and `TRY_CONVERT(datetime2, ...)` before chronology comparisons.
+
+This prevents missing values from being incorrectly classified as chronology anomalies.
+
+### Validation results
+
+| Validation | Bronze | Silver |
+|---|---:|---:|
+| Total orders | 99,441 | 99,441 |
+| Carrier before purchase | 161 | 161 |
+| Customer delivery before carrier | 23 | 23 |
+
+Additional timestamp preservation validation confirmed that no genuine Bronze carrier or customer delivery timestamps were missing in Silver.
+
+### Design decision
+
+The 161 carrier-before-purchase anomalies and 23 customer-delivery-before-carrier anomalies were retained in Silver.
+
+These values originate in the source dataset. No unsupported timestamp corrections were applied.
+
+The Silver layer preserves the source timestamps while normalising empty optional timestamp values to SQL `NULL`.
+
+The anomalies should be treated as source-data quality exceptions and considered when interpreting delivery performance analytics.
+
+### Conclusion
+
+Bronze and Silver contain the same 99,441 orders. Both layers produce identical chronology anomaly counts after correct date conversion and empty-string handling.
+
+The validation therefore confirms timestamp preservation and consistent missing-value handling between the two layers.
