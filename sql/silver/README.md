@@ -107,3 +107,44 @@ The anomalies should be treated as source-data quality exceptions and considered
 Bronze and Silver contain the same 99,441 orders. Both layers produce identical chronology anomaly counts after correct date conversion and empty-string handling.
 
 The validation therefore confirms timestamp preservation and consistent missing-value handling between the two layers.
+
+## Geolocation Duplicate ZIP-Code Validation
+
+### Objective
+To investigate repeated ZIP-code prefixes in the Silver geolocation table and reconcile the duplicate-group results against the total row count.
+
+### Validation Results
+
+| Validation | Result |
+|---|---:|
+| Total Silver geolocation rows | 738,297 |
+| Distinct ZIP-code prefixes | 19,015 |
+| ZIP-code prefixes appearing more than once | 17,823 |
+| ZIP-code prefixes appearing exactly once | 1,192 |
+| Rows belonging to duplicate groups | 737,105 |
+
+### Investigation and Findings
+
+The initial duplicate-check query used:
+
+```sql
+HAVING COUNT(*) > 1
+```
+
+This returned only ZIP-code prefixes appearing more than once. Consequently, the 1,192 prefixes appearing exactly once were excluded from the result.
+
+The row-count reconciliation confirmed:
+
+737,105 + 1,192 = 738,297
+
+The results balance with the total Silver geolocation row count.
+
+### Design Decision
+
+Multiple geolocation records sharing the same ZIP-code prefix are not automatically considered invalid duplicates. A ZIP-code prefix can legitimately have multiple associated geolocation records.
+
+Therefore, repeated ZIP-code prefixes are identified and investigated rather than automatically removed.
+
+### Validation Outcome
+
+The reconciliation was successful. All 738,297 Silver geolocation rows are accounted for in this validation.
