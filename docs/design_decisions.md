@@ -88,3 +88,103 @@ The Silver Order Payments validation confirmed:
 - Identified installment, payment-value and sequence irregularities were inherited from Bronze.
 
 The findings support the decision to retain the source data and document its limitations rather than introduce unsupported corrections.
+## Silver Order Reviews — Data Quality and Source Anomalies
+
+### Validation Findings
+
+The Silver Order Reviews table contains **99,224 records**.
+
+The following checks were completed:
+
+| Validation | Result |
+|---|---:|
+| Total review records | 99,224 |
+| Distinct review IDs | 98,410 |
+| Extra rows from repeated review IDs | 814 |
+| Repeated review ID groups | 789 |
+| Highest occurrences of one review ID | 3 |
+| NULL review IDs | 0 |
+| NULL order IDs | 0 |
+| Invalid review scores | 0 |
+| Reviews without matching Silver orders | 0 |
+| Answers before review creation | 0 |
+
+### Repeated Review ID Investigation
+
+The investigation identified 789 review ID groups occurring more than once, accounting for 814 extra rows.
+
+Further investigation established that:
+
+- The repeated review ID groups already exist in the Bronze layer.
+- All 789 repeated review ID groups in Bronze are associated with multiple orders.
+- All repeated groups in Silver have consistent review scores.
+- No repeated group has conflicting non-NULL review titles or messages.
+- No repeated group contains a mixture of NULL and non-NULL titles or messages.
+- Review creation and answer timestamps are consistent within all repeated groups.
+
+A sample review ID was compared directly between Bronze and Silver. The three records associated with that review ID were present in both layers with matching order IDs, scores and comments.
+
+The aggregate comparison also confirmed that Bronze and Silver contain the same total number of rows and distinct review IDs.
+
+These findings indicate that the repeated review identifiers are inherited source-data anomalies rather than evidence of new duplication introduced by Silver.
+
+### Missing Review Comments
+
+The following missing-comment values were identified:
+
+| Attribute | Missing records |
+|---|---:|
+| Review comment titles | 87,666 |
+| Review comment messages | 58,274 |
+
+Missing written feedback does not automatically represent a data-quality failure. Customers may submit a numerical rating without providing a title or written comment.
+
+The review records were therefore retained.
+
+### Review Score Distribution
+
+The review score profile is:
+
+| Review score | Number of reviews | Percentage |
+|---|---:|---:|
+| 1 | 11,424 | 11.51% |
+| 2 | 3,151 | 3.18% |
+| 3 | 8,179 | 8.24% |
+| 4 | 19,142 | 19.29% |
+| 5 | 57,328 | 57.78% |
+| **Total** | **99,224** | **100%** |
+
+The distribution shows that five-star reviews represent the largest category, accounting for 57.78% of all review records. Reviews with scores of four or five account for 77.07%.
+
+### Bronze-to-Silver Reconciliation
+
+The row-count comparison produced the following results:
+
+| Metric | Bronze | Silver |
+|---|---:|---:|
+| Total rows | 99,224 | 99,224 |
+| Distinct review IDs | 98,410 | 98,410 |
+
+The matching counts confirm that there was no net row loss or increase between Bronze and Silver.
+
+### Design Decision
+
+Repeated review identifiers were retained because the records were already present in Bronze and were associated with different orders.
+
+No review records were deleted, review identifiers were not artificially regenerated, and missing comments were not treated as grounds for removing records.
+
+This approach preserves source lineage and prevents unsupported changes to customer review information.
+
+### Conclusion
+
+The Silver Order Reviews validation established that:
+
+- All review identifiers and order identifiers are populated.
+- Review scores fall within the valid range of 1 to 5.
+- Review answer timestamps do not precede review creation timestamps.
+- All reviews reference existing Silver orders.
+- Repeated review ID patterns originate in Bronze.
+- Missing review comments are retained as valid optional attributes.
+- Bronze and Silver have matching total row counts and distinct review ID counts.
+
+The Silver Order Reviews table retains the source records while making identified data-quality limitations visible for downstream reporting and analysis.
