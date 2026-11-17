@@ -188,3 +188,43 @@ The Silver Order Reviews validation established that:
 - Bronze and Silver have matching total row counts and distinct review ID counts.
 
 The Silver Order Reviews table retains the source records while making identified data-quality limitations visible for downstream reporting and analysis.
+## Silver Orders – Empty Timestamp Standardisation
+
+### Finding
+
+During Silver Orders validation, differences were identified between the timestamp fields in the Bronze and Silver layers.
+
+The following Bronze columns are stored as `nvarchar`:
+
+- `order_approved_at`
+- `order_delivered_carrier_date`
+- `order_delivered_customer_date`
+
+Investigation confirmed that some records contain empty strings (`''`) in Bronze, while the corresponding Silver records contain SQL `NULL` values.
+
+### Validation Results
+
+| Timestamp column | Empty strings in Bronze | Corresponding NULL values in Silver |
+|---|---:|---:|
+| `order_approved_at` | 160 | 160 |
+| `order_delivered_carrier_date` | 1,783 | 1,783 |
+| `order_delivered_customer_date` | 2,965 | 2,965 |
+| **Total field-level differences** | **4,908** | **4,908** |
+
+A final comparison using an INNER JOIN on `order_id` confirmed that all three counts matched exactly.
+
+### Design Decision
+
+Empty timestamp strings in the Bronze layer are represented as SQL `NULL` values in the Silver layer.
+
+This standardisation ensures that missing date values are represented consistently as database NULLs rather than empty text values.
+
+- Bronze preserves the raw source representation.
+- Silver uses NULL to represent missing timestamp values.
+- These 4,908 field-level differences are explained by this standardisation and are not, by themselves, evidence of data loss.
+
+### Validation Outcome
+
+**PASS** – All three timestamp comparisons reconciled successfully.
+
+The validation confirms the resulting data behaviour. The original SQL or SSIS transformation responsible for this standardisation has not yet been identified in the tracked project files.
