@@ -11,8 +11,8 @@
   DTS:LocaleID="1033"
   DTS:ObjectName="Olist_SSIS_dwh"
   DTS:PackageType="5"
-  DTS:VersionBuild="125"
-  DTS:VersionGUID="{BE41FC61-D46E-44A5-A281-896777C9DE0D}">
+  DTS:VersionBuild="134"
+  DTS:VersionGUID="{41BED0F2-D170-4C36-A955-65D2B0529DED}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -21,6 +21,8 @@
       DTS:CreationName="FLATFILE"
       DTS:DTSID="{E789D7FE-4219-4358-80DB-F5C6AA4CD532}"
       DTS:ObjectName="CSV_category_translation_table">
+      <DTS:PropertyExpression
+        DTS:Name="ConnectionString">@[$Project::source_folder] + "product_category_name_translation.csv"</DTS:PropertyExpression>
       <DTS:ObjectData>
         <DTS:ConnectionManager
           DTS:Format="Delimited"
@@ -59,6 +61,8 @@
       DTS:CreationName="FLATFILE"
       DTS:DTSID="{E21179CC-F3B2-4839-B489-4CE7FC7751DB}"
       DTS:ObjectName="CSV_customers_table">
+      <DTS:PropertyExpression
+        DTS:Name="ConnectionString">@[$Project::source_folder] + "olist_customers_dataset.csv"</DTS:PropertyExpression>
       <DTS:ObjectData>
         <DTS:ConnectionManager
           DTS:Format="Delimited"
@@ -124,6 +128,8 @@
       DTS:CreationName="FLATFILE"
       DTS:DTSID="{D16F5E5E-ABB8-4A22-A49B-F5B5CFA86DDE}"
       DTS:ObjectName="CSV_geolocation_table">
+      <DTS:PropertyExpression
+        DTS:Name="ConnectionString">@[$Project::source_folder] + "olist_geolocation_dataset.csv"</DTS:PropertyExpression>
       <DTS:ObjectData>
         <DTS:ConnectionManager
           DTS:Format="Delimited"
@@ -189,6 +195,8 @@
       DTS:CreationName="FLATFILE"
       DTS:DTSID="{168D3F91-307A-4B02-8E73-B00EC28DE1C9}"
       DTS:ObjectName="CSV_load_order_reviews">
+      <DTS:PropertyExpression
+        DTS:Name="ConnectionString">@[$Project::source_folder] + "olist_order_reviews_dataset.csv"</DTS:PropertyExpression>
       <DTS:ObjectData>
         <DTS:ConnectionManager
           DTS:Format="Delimited"
@@ -272,6 +280,8 @@
       DTS:CreationName="FLATFILE"
       DTS:DTSID="{D2B197F7-12AA-4811-AF8A-5F148479DBF9}"
       DTS:ObjectName="CSV_orders_table">
+      <DTS:PropertyExpression
+        DTS:Name="ConnectionString">@[$Project::source_folder] + "olist_orders_dataset.csv"</DTS:PropertyExpression>
       <DTS:ObjectData>
         <DTS:ConnectionManager
           DTS:Format="Delimited"
@@ -364,6 +374,8 @@
       DTS:CreationName="FLATFILE"
       DTS:DTSID="{0A7C6DB8-9D7A-4D41-82D8-E47967C56A81}"
       DTS:ObjectName="CSV_order_items_table">
+      <DTS:PropertyExpression
+        DTS:Name="ConnectionString">@[$Project::source_folder] + "olist_order_items_dataset.csv"</DTS:PropertyExpression>
       <DTS:ObjectData>
         <DTS:ConnectionManager
           DTS:Format="Delimited"
@@ -447,6 +459,8 @@
       DTS:CreationName="FLATFILE"
       DTS:DTSID="{AE8E827F-1178-4BC6-8942-FD3887F5A80D}"
       DTS:ObjectName="CSV_order_payments_table">
+      <DTS:PropertyExpression
+        DTS:Name="ConnectionString">@[$Project::source_folder] + "olist_order_payments_dataset.csv"</DTS:PropertyExpression>
       <DTS:ObjectData>
         <DTS:ConnectionManager
           DTS:Format="Delimited"
@@ -512,6 +526,8 @@
       DTS:CreationName="FLATFILE"
       DTS:DTSID="{27AAA7E0-62EF-4CCC-A841-A59983BF11B4}"
       DTS:ObjectName="CSV_products_table">
+      <DTS:PropertyExpression
+        DTS:Name="ConnectionString">@[$Project::source_folder] + "olist_products_dataset.csv"</DTS:PropertyExpression>
       <DTS:ObjectData>
         <DTS:ConnectionManager
           DTS:Format="Delimited"
@@ -613,6 +629,8 @@
       DTS:CreationName="FLATFILE"
       DTS:DTSID="{C3EE5481-C733-4956-9F7E-1A28BAFA5B92}"
       DTS:ObjectName="CSV_sellers_table">
+      <DTS:PropertyExpression
+        DTS:Name="ConnectionString">@[$Project::source_folder] + "olist_sellers_dataset.csv"</DTS:PropertyExpression>
       <DTS:ObjectData>
         <DTS:ConnectionManager
           DTS:Format="Delimited"
@@ -675,7 +693,7 @@
       DTS:Namespace="User"
       DTS:ObjectName="BatchID">
       <DTS:VariableValue
-        DTS:DataType="8">{63511ECC-EF91-4F8F-AF8B-C27B841718DB}</DTS:VariableValue>
+        DTS:DataType="8">{D619A91B-69AC-4803-9845-AB6A8CB5F7C7}</DTS:VariableValue>
     </DTS:Variable>
   </DTS:Variables>
   <DTS:Executables>
