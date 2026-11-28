@@ -10,9 +10,10 @@ The Silver layer includes data cleaning, standardisation, duplicate removal and 
 
 | Script | Purpose |
 |---|---|
-| `09_silver_geolocation.sql` | Cleans, standardises and deduplicates geolocation records before loading them into `silver.geolocation`. |
+| `09_silver_geolocation.sql` | Cleans, standardises and aggregates geolocation records before loading `silver.geolocation`. |
 | `10_validate_customers.sql` | Validates customer records, required attributes, postal codes and relationships with orders. |
 | `11_check_orders.sql` | Validates order counts, unique order IDs, required fields, customer relationships and duplicate order IDs. |
+| `12_silver_order_reviews.sql` | Deduplicates order reviews by `review_id` and reloads `silver.order_reviews`. |
 
 ## Geolocation Transformation
 
@@ -20,15 +21,19 @@ The geolocation transformation performs the following operations:
 
 - Standardises postal codes to five characters.
 - Converts latitude and longitude values into decimal values.
-- Checks coordinates against the configured geographic ranges.
+- Checks coordinates against configured geographic ranges.
 - Converts city names to lowercase and removes surrounding spaces.
 - Standardises state values.
-- Removes duplicate records using `ROW_NUMBER()`, retaining one record for each unique combination of postal code, coordinates, city and state.
+- Aggregates geolocation records to one record per postal-code prefix.
+- Selects the most frequent city and state for each prefix.
+- Calculates average valid coordinates for each prefix.
 - Reloads the Silver table using a truncate-and-load approach.
 
 The transformation is implemented in `09_silver_geolocation.sql` and integrated into the SSIS control flow.
 
-**Validated result:** 738,297 records in `silver.geolocation`.
+**Validated result:** 19,015 records in `silver.geolocation`, representing 19,015 distinct postal-code prefixes.
+
+Four records have NULL latitude and longitude values because their source coordinates fall outside the configured geographic bounds.
 
 ## Customer Validation
 
@@ -52,35 +57,41 @@ The orders validation script checks:
 
 These checks help establish the quality and reliability of order data before downstream analytical processing.
 
-## Execution
+## Order Review Transformation
 
-Run the SQL scripts against the `olist_dwh` database in SQL Server Management Studio.
+The review transformation is implemented in `12_silver_order_reviews.sql`.
 
-The geolocation transformation is also included in the SSIS package, following the creation of the Silver schema.
+The transformation:
 
-## Layer Outcome
+- Reads review records from Bronze.
+- Deduplicates records using `review_id`.
+- Retains one record per review ID.
+- Uses the latest `review_answer_timestamp`, with `order_id` as a secondary ordering criterion.
+- Reloads `silver.order_reviews` using a full-refresh approach.
 
-The Silver layer provides cleaned geolocation data and validation checks for customers and orders. It supports the downstream Gold dimensions and fact tables while helping identify data-quality issues early in the warehouse pipeline.
+**Validated result:**
+
+| Validation | Result |
+|---|---:|
+| Bronze review records | 99,224 |
+| Silver review records | 98,410 |
+| Distinct Silver review IDs | 98,410 |
+| Duplicate Silver review IDs | 0 |
 
 ## Order Timestamp Chronology Validation
 
 ### Objective
+
 Validate the chronological consistency of order timestamps between the Bronze and Silver layers while preserving the original source values.
 
 ### Validation rules
-
-Two chronology rules were evaluated:
 
 1. `order_delivered_carrier_date` should not precede `order_purchase_timestamp`.
 2. `order_delivered_customer_date` should not precede `order_delivered_carrier_date`.
 
 ### Missing timestamp handling
 
-The Bronze order dataset contains empty strings in optional delivery timestamp fields.
-
-During validation, empty strings were explicitly converted to SQL `NULL` using `NULLIF` and `TRY_CONVERT(datetime2, ...)` before chronology comparisons.
-
-This prevents missing values from being incorrectly classified as chronology anomalies.
+Empty strings in optional delivery timestamp fields are converted to SQL `NULL` using `NULLIF` and `TRY_CONVERT(datetime2, ...)` before chronology comparisons.
 
 ### Validation results
 
@@ -90,61 +101,56 @@ This prevents missing values from being incorrectly classified as chronology ano
 | Carrier before purchase | 161 | 161 |
 | Customer delivery before carrier | 23 | 23 |
 
-Additional timestamp preservation validation confirmed that no genuine Bronze carrier or customer delivery timestamps were missing in Silver.
+The 161 carrier-before-purchase anomalies and 23 customer-delivery-before-carrier anomalies were retained because they originate in the source dataset.
 
-### Design decision
-
-The 161 carrier-before-purchase anomalies and 23 customer-delivery-before-carrier anomalies were retained in Silver.
-
-These values originate in the source dataset. No unsupported timestamp corrections were applied.
-
-The Silver layer preserves the source timestamps while normalising empty optional timestamp values to SQL `NULL`.
-
-The anomalies should be treated as source-data quality exceptions and considered when interpreting delivery performance analytics.
+The Silver layer preserves source timestamps while normalising empty optional timestamp values to SQL `NULL`.
 
 ### Conclusion
 
-Bronze and Silver contain the same 99,441 orders. Both layers produce identical chronology anomaly counts after correct date conversion and empty-string handling.
+Bronze and Silver contain the same 99,441 orders. Both layers produce identical chronology anomaly counts after date conversion and empty-string handling.
 
-The validation therefore confirms timestamp preservation and consistent missing-value handling between the two layers.
-
-## Geolocation Duplicate ZIP-Code Validation
+## Geolocation ZIP-Code Validation
 
 ### Objective
-To investigate repeated ZIP-code prefixes in the Silver geolocation table and reconcile the duplicate-group results against the total row count.
 
-### Validation Results
+Validate the uniqueness and row-count reconciliation of postal-code prefixes in the Silver geolocation table.
+
+### Latest validation results
 
 | Validation | Result |
 |---|---:|
-| Total Silver geolocation rows | 738,297 |
+| Total Silver geolocation rows | 19,015 |
 | Distinct ZIP-code prefixes | 19,015 |
-| ZIP-code prefixes appearing more than once | 17,823 |
-| ZIP-code prefixes appearing exactly once | 1,192 |
-| Rows belonging to duplicate groups | 737,105 |
+| Duplicate ZIP-code prefixes | 0 |
 
-### Investigation and Findings
+The Silver transformation now produces one aggregated record per postal-code prefix.
 
-The initial duplicate-check query used:
+This is the result of the updated aggregation design, rather than the earlier approach that retained multiple geolocation records per prefix.
 
-```sql
-HAVING COUNT(*) > 1
-```
+## Execution
 
-This returned only ZIP-code prefixes appearing more than once. Consequently, the 1,192 prefixes appearing exactly once were excluded from the result.
+The geolocation transformation is integrated into the existing SSIS package following creation of the Silver schema.
 
-The row-count reconciliation confirmed:
+The review transformation is maintained as a separate SQL script and must execute after Bronze ingestion.
 
-737,105 + 1,192 = 738,297
+Customer and order validation scripts can be executed against the `olist_dwh` database in SQL Server Management Studio.
 
-The results balance with the total Silver geolocation row count.
+## Layer Outcome
 
-### Design Decision
+The Silver layer provides refined geolocation and order-review data, alongside customer and order validation checks.
 
-Multiple geolocation records sharing the same ZIP-code prefix are not automatically considered invalid duplicates. A ZIP-code prefix can legitimately have multiple associated geolocation records.
+The validated Silver tables currently contain:
 
-Therefore, repeated ZIP-code prefixes are identified and investigated rather than automatically removed.
+| Table | Rows |
+|---|---:|
+| customers | 99,441 |
+| geolocation | 19,015 |
+| order_items | 112,650 |
+| order_payments | 103,886 |
+| order_reviews | 98,410 |
+| orders | 99,441 |
+| product_category_name_translation | 71 |
+| products | 32,951 |
+| sellers | 3,095 |
 
-### Validation Outcome
-
-The reconciliation was successful. All 738,297 Silver geolocation rows are accounted for in this validation.
+The layer supports downstream Gold dimensions and fact tables while preserving documented source-data quality exceptions.
